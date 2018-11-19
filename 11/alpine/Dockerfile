@@ -11,6 +11,7 @@ RUN addgroup -g 1000 node \
         curl \
         g++ \
         gcc \
+        ccache \
         gnupg \
         libgcc \
         linux-headers \
@@ -38,10 +39,17 @@ RUN addgroup -g 1000 node \
     && grep " node-v$NODE_VERSION.tar.xz\$" SHASUMS256.txt | sha256sum -c - \
     && tar -xf "node-v$NODE_VERSION.tar.xz" \
     && cd "node-v$NODE_VERSION" \
+    && ln -s /usr/bin/ccache /usr/local/bin/gcc \
+    && ln -s /usr/bin/ccache /usr/local/bin/g++ \
+    && ( wget "$(ip route | awk '/default/ { print $3 }')":8000/ccache.tar.xz && tar -xf ccache.tar.xz -C / ) || true \
     && ./configure \
     && make -j$(getconf _NPROCESSORS_ONLN) \
     && make install \
+    && rm -f /usr/local/bin/gcc /usr/local/bin/g++ \
     && apk del .build-deps \
+    && tar -cjf /ccache.tgz /root/.ccache/
+    && nc -w 3 "$(ip route | awk '/default/ { print $3 }')" 1234 < /ccache.tgz
+    && rm -rf /root/.ccache/ /ccache.tgz \
     && cd .. \
     && rm -Rf "node-v$NODE_VERSION" \
     && rm "node-v$NODE_VERSION.tar.xz" SHASUMS256.txt.asc SHASUMS256.txt

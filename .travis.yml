@@ -30,6 +30,14 @@ services:
       echo "Skip build of $Dockerfile as it's not changed."
       exit
     fi
+    if [ "alpine" = "$VARIANT" ]; then
+      mkdir -p ccache
+      (
+        cd ccache
+        python -m SimpleHTTPServer &
+        nc -l -p 1234 > new-cache.tar.xz &
+      )
+    fi
 
 script: ./test-build.sh $NODE_VERSION $VARIANT
 
@@ -112,6 +120,16 @@ jobs:
         - NODE_VERSION: "10"
         - VARIANT: "alpine"
 
+      addons:
+        apt:
+          packages:
+            - netcat
+      before_cache:
+        - mv ccache/new-cache.tar.xz ccache/cache.tar.xz
+      cache:
+        directories:
+          - ccache/
+
     - stage: Build
       before_script: *auto_skip
       env:
@@ -129,6 +147,16 @@ jobs:
       env:
         - NODE_VERSION: "11"
         - VARIANT: "alpine"
+
+      addons:
+        apt:
+          packages:
+            - netcat
+      before_cache:
+        - mv ccache/new-cache.tar.xz ccache/cache.tar.xz
+      cache:
+        directories:
+          - ccache/
 
     - stage: Build
       before_script: *auto_skip
@@ -153,6 +181,16 @@ jobs:
       env:
         - NODE_VERSION: "6"
         - VARIANT: "alpine"
+
+      addons:
+        apt:
+          packages:
+            - netcat
+      before_cache:
+        - mv ccache/new-cache.tar.xz ccache/cache.tar.xz
+      cache:
+        directories:
+          - ccache/
 
     - stage: Build
       before_script: *auto_skip
@@ -183,6 +221,16 @@ jobs:
       env:
         - NODE_VERSION: "8"
         - VARIANT: "alpine"
+
+      addons:
+        apt:
+          packages:
+            - netcat
+      before_cache:
+        - mv ccache/new-cache.tar.xz ccache/cache.tar.xz
+      cache:
+        directories:
+          - ccache/
 
     - stage: Build
       before_script: *auto_skip
